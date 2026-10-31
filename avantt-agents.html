@@ -17,9 +17,9 @@
 <section class="card"><h2>Equipe cadastrada</h2><div id="team" class="muted">Carregando...</div></section>
 </div></main>
 <script>
-const URL='https://ihkalwfseuigbuhbqdcw.supabase.co';
+const SUPABASE_URL='https://ihkalwfseuigbuhbqdcw.supabase.co';
 const KEY='sb_publishable_at_3-NPIwklfWqFmy8Mqig_H4VVCUW7';
-const sb=window.supabase.createClient(URL,KEY);
+const sb=window.supabase.createClient(SUPABASE_URL,KEY);
 const $=id=>document.getElementById(id);
 let currentUser=null;
 function say(id,text){$(id).textContent=text}
