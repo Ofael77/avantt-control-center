@@ -93,33 +93,59 @@ async function refresh(){
  $('#tasksBody').innerHTML=tasks.length?tasks.map(x=>`<tr><td>${esc(x.title)}</td><td>${esc(x.agent_id?'Agente atribuído':'A definir')}</td><td>${esc(x.status)}</td><td>${esc(x.priority)}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Nenhuma tarefa cadastrada.</td></tr>';
  $('#agents').innerHTML=(a.data||[]).map(x=>`<div class="card"><b>${esc(x.name)}</b><p class="muted">${esc(x.description||'')}</p><span class="status">${esc(x.status)}</span></div>`).join('');
 }
-function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===id));$('#pageTitle').textContent=({overview:'Visão geral',clients:'Clientes',projects:'Projetos',tasks:'Tarefas',team:'Equipe IA'})[id]}
-document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
-function openForm(k){kind=k;const defs={client:['Novo cliente',[['name','Nome','text'],['company','Empresa','text'],['email','E-mail','email'],['phone','Telefone','text'],['segment','Segmento','text']]],project:['Novo projeto',[['name','Nome do projeto','text'],['service_type','Serviço','text'],['description','Descrição','text'],['due_date','Prazo','date'],['budget','Orçamento (R$)','number']]],task:['Nova tarefa',[['title','Título da tarefa','text'],['description','Descrição','text'],['priority','Prioridade','select:low|medium|high|urgent'],['due_date','Prazo','date']]]};
- const [title,fields]=defs[k];$('#modalTitle').textContent=title;$('#fields').innerHTML=fields.map(([n,l,t])=>`<div class="field"><label>${l}</label>${t.startsWith('select:')?`<select name="${n}">${t.split(':')[1].split('|').map(v=>`<option value="${v}">${v}</option>`).join('')}</select>`:`<input name="${n}" type="${t}" ${n==='name'||n==='title'?'required':''} ${t==='number'?'min="0" step="0.01"':''}></div>`).join('');$('#modal').classList.add('open');msg('#formMsg','')}
-function closeForm(){$('#modal').classList.remove('open')}
-$('#recordForm').onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target));const {data:{user}}=await sb.auth.getUser();data.owner_id=user.id;
- let table=kind==='client'?'clients':kind==='project'?'projects':'tasks';
- if(kind==='project')data.status='planning';if(kind==='task'){data.status='pending';data.requires_approval=true}
- const result=await sb.from(table).insert(data);if(result.error){msg('#formMsg','Erro: '+result.error.message);return}
- closeForm();e.target.reset();await refresh()};
-window.addEventListener('load',()=>{
-  try {
-    if(sdkReady()){
-      sb.auth.getSession().then(({data:{session},error})=>{
-        if(error)msg('#authMsg','Erro ao verificar sessão: '+error.message);
-        if(session)startApp();
-      }).catch(e=>msg('#authMsg','Falha de conexão: '+e.message));
+function openForm(k) {
+  kind = k;
+
+  const defs = {
+    client: ['Novo cliente', [
+      ['name', 'Nome', 'text'],
+      ['company', 'Empresa', 'text'],
+      ['email', 'E-mail', 'email'],
+      ['phone', 'Telefone', 'text'],
+      ['segment', 'Segmento', 'text']
+    ]],
+    project: ['Novo projeto', [
+      ['name', 'Nome do projeto', 'text'],
+      ['service_type', 'Serviço', 'text'],
+      ['description', 'Descrição', 'text'],
+      ['due_date', 'Prazo', 'date'],
+      ['budget', 'Orçamento (R$)', 'number']
+    ]],
+    task: ['Nova tarefa', [
+      ['title', 'Título da tarefa', 'text'],
+      ['description', 'Descrição', 'text'],
+      ['priority', 'Prioridade', 'select:low|medium|high|urgent'],
+      ['due_date', 'Prazo', 'date']
+    ]]
+  };
+
+  const [title, fields] = defs[k];
+  $('#modalTitle').textContent = title;
+
+  const html = fields.map(function(field) {
+    const n = field[0];
+    const l = field[1];
+    const t = field[2];
+
+    let control = '';
+
+    if (t.startsWith('select:')) {
+      const options = t.split(':')[1].split('|').map(function(v) {
+        return '<option value="' + v + '">' + v + '</option>';
+      }).join('');
+
+      control = '<select name="' + n + '">' + options + '</select>';
+    } else {
+      const required = (n === 'name' || n === 'title') ? ' required' : '';
+      const numberAttrs = t === 'number' ? ' min="0" step="0.01"' : '';
+
+      control = '<input name="' + n + '" type="' + t + '"' + required + numberAttrs + '>';
     }
-  } catch(e) {
-    msg('#authMsg','Falha ao iniciar conexão: '+(e && e.message ? e.message : String(e)));
-    $('#loginBtn').disabled=true; $('#signupBtn').disabled=true;
-  }
-});
-setTimeout(()=>{
-  if(!sb && $('#authMsg').textContent.includes('Carregando')){
-    msg('#authMsg','A biblioteca do Supabase não carregou. Verifique a internet ou bloqueadores do navegador e atualize a página.');
-    $('#loginBtn').disabled=true; $('#signupBtn').disabled=true;
-  }
-},10000);
-</script></body></html>
+
+    return '<div class="field"><label>' + l + '</label>' + control + '</div>';
+  }).join('');
+
+  $('#fields').innerHTML = html;
+  $('#modal').classList.add('open');
+  msg('#formMsg', '');
+}
