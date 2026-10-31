@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AVANTt | Central de Agentes</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{color-scheme:dark;--bg:#0d1015;--panel:#151a22;--line:#293241;--txt:#f4f6f8;--muted:#9aa6b5;--blue:#3978ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px Inter,system-ui,Arial}main{max-width:1050px;margin:auto;padding:26px 18px}.brand{font-size:28px;font-weight:850;letter-spacing:3px}.brand span{color:#6394ff}.muted{color:var(--muted);font-size:12px;line-height:1.6}.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px;margin:16px 0}.field{display:grid;gap:7px;margin:13px 0}label{font-size:11px;color:var(--muted)}input,select,textarea{width:100%;padding:12px;background:#0f141c;color:var(--txt);border:1px solid var(--line);border-radius:8px;font:inherit}textarea{min-height:150px;resize:vertical;line-height:1.5}.btn{background:var(--blue);border:0;border-radius:8px;padding:11px 15px;color:white;font-weight:650;cursor:pointer}.btn.secondary{background:#222c3a;border:1px solid var(--line)}.btn:disabled{opacity:.5;cursor:wait}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.msg{margin-top:12px;color:#f0bd55;font-size:12px;white-space:pre-wrap}.hidden{display:none!important}.run{padding:14px 0;border-bottom:1px solid var(--line)}.run:last-child{border:0}.output{white-space:pre-wrap;line-height:1.65;overflow-wrap:anywhere;font-size:13px;margin-top:10px}.status{display:inline-block;font-size:10px;padding:5px 8px;border-radius:20px;background:#203b32;color:#86e1b6}.danger{background:#452b24;color:#ffd0a8}.notice{border:1px solid #29446b;background:#17263d;color:#b9d0ff;border-radius:9px;padding:12px;font-size:11px;line-height:1.5}
+</style></head><body><main>
+<div class="brand">AVANT<span>t</span></div><p class="muted">CENTRAL DE COMANDO · AGENTES DE INTELIGÊNCIA ARTIFICIAL</p>
+<section id="auth" class="card"><h2>Acessar central</h2><div class="field"><label>E-mail</label><input id="email" type="email" autocomplete="email"></div><div class="field"><label>Senha</label><input id="password" type="password" autocomplete="current-password"></div><div class="row"><button class="btn" id="login">Entrar</button><a href="./">Voltar ao painel principal</a></div><div id="authMsg" class="msg"></div><p class="muted">Use a mesma conta do painel AVANTt.</p></section>
+<div id="app" class="hidden">
+<div class="notice">Os agentes produzem análises, rascunhos e planos. Aprovar um resultado registra sua validação, mas não publica conteúdo, envia mensagens nem realiza despesas.</div>
+<section class="card"><h2>Executar agente</h2><div class="field"><label for="agent">Agente especialista</label><select id="agent"></select></div><div class="field"><label for="request">Solicitação</label><textarea id="request" maxlength="12000" placeholder="Descreva o trabalho que deseja delegar ao agente selecionado..."></textarea></div><button class="btn" id="execute">Executar agente</button><div id="runMsg" class="msg"></div><div id="latest" class="hidden"><h3>Resultado gerado</h3><div id="latestOutput" class="output"></div><p id="latestMeta" class="muted"></p></div></section>
+<section class="card"><div class="row" style="justify-content:space-between"><h2>Histórico e aprovações</h2><button class="btn secondary" id="refresh">Atualizar</button></div><div id="history" class="muted">Carregando...</div></section>
+<section class="card"><h2>Equipe cadastrada</h2><div id="team" class="muted">Carregando...</div></section>
+</div></main>
+<script>
+const URL='https://ihkalwfseuigbuhbqdcw.supabase.co';
+const KEY='sb_publishable_at_3-NPIwklfWqFmy8Mqig_H4VVCUW7';
+const sb=window.supabase.createClient(URL,KEY);
+const $=id=>document.getElementById(id);
+let currentUser=null;
+function say(id,text){$(id).textContent=text}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function boot(){
+ const {data,error}=await sb.auth.getUser();
+ if(error||!data.user)return;
+ currentUser=data.user;$('auth').classList.add('hidden');$('app').classList.remove('hidden');
+ await loadAgents();await loadHistory();
+}
+async function auth(){
+ const email=$('email').value.trim(),password=$('password').value;
+ if(!email||!password){say('authMsg','Informe e-mail e senha.');return}
+ const {error}=await sb.auth.signInWithPassword({email,password});
+ if(error){say('authMsg',error.message);return}
+ await boot();
+}
+$('login').onclick=auth;
+$('password').addEventListener('keydown',e=>{if(e.key==='Enter')auth()});
+async function loadAgents(){
+ const {data,error}=await sb.from('agents').select('id,name,role,description,status').order('name');
+ if(error){say('team','Erro ao carregar agentes: '+error.message);return}
+ currentAgents=data||[];
+ $('agent').innerHTML=(data||[]).map(a=>'<option value="'+esc(a.id)+'">'+esc(a.name)+' · '+esc(a.status)+'</option>').join('');
+ $('team').innerHTML=(data||[]).map(a=>'<div class="run"><b>'+esc(a.name)+'</b><p class="muted">'+esc(a.description||a.role||'')+'</p><span class="status">'+esc(a.status)+'</span></div>').join('');
+}
+$('execute').onclick=async()=>{
+ const input=$('request').value.trim(),agent_id=$('agent').value,button=$('execute');
+ if(!input){say('runMsg','Escreva a solicitação.');return}
+ if(!agent_id){say('runMsg','Nenhum agente disponível.');return}
+ button.disabled=true;button.textContent='Processando...';say('runMsg','O agente está trabalhando.');$('latest').classList.add('hidden');
+ try{
+  const {data,error}=await sb.functions.invoke('avantt-agent-runner',{body:{input,agent_id}});
+  if(error){let m=error.message;if(error.context){try{const j=await error.context.json();m=j.error||m}catch{}}say('runMsg','Falha: '+m);return}
+  if(!data?.success){say('runMsg',data?.error||'Resposta inválida.');return}
+  $('latestOutput').textContent=data.output;$('latestMeta').textContent='Execução '+data.run.id+' · '+data.run.status+' · Aprovação humana necessária.';
+  $('latest').classList.remove('hidden');say('runMsg','Resultado salvo para revisão.');await loadHistory();
+ }catch(e){say('runMsg','Erro: '+e.message)}
+ finally{button.disabled=false;button.textContent='Executar agente'}
+};
+async function loadHistory(){
+ const {data,error}=await sb.from('agent_runs').select('id,input,output,status,requires_approval,created_at,agent_id').order('created_at',{ascending:false}).limit(30);
+ if(error){say('history','Não foi possível carregar histórico: '+error.message);return}
+ if(!data?.length){say('history','Nenhuma execução registrada.');return}
+ $('history').innerHTML=data.map(r=>{
+  const pending=r.status==='awaiting_approval'&&r.requires_approval;
+  return '<article class="run"><b>'+esc((currentAgents.find(a=>a.id===r.agent_id)||{}).name||'Agente IA')+'</b> <span class="status '+(pending?'danger':'')+'">'+esc(r.status)+'</span><p class="muted">'+new Date(r.created_at).toLocaleString('pt-BR')+'</p><p class="muted">'+esc(r.input)+'</p><details><summary>Ver resultado</summary><div class="output">'+esc(r.output)+'</div></details>'+(pending?'<p><button class="btn secondary" data-id="'+esc(r.id)+'">Aprovar resultado</button></p>':'')+'</article>'
+ }).join('');
+ $('history').querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>approve(b.dataset.id,b));
+}
+let currentAgents=[];
+async function approve(id,b){
+ if(!confirm('Aprovar este resultado? Isso apenas registra sua aprovação no painel; não realiza ações externas.'))return;
+ b.disabled=true;
+ const {data,error}=await sb.from('agent_runs').update({status:'completed',requires_approval:false}).eq('id',id).select('id').maybeSingle();
+ if(error||!data){b.disabled=false;alert('Não foi possível aprovar: '+(error?.message||'nenhuma linha atualizada'));return}
+ await loadHistory();
+}
+$('refresh').onclick=loadHistory;
+sb.auth.onAuthStateChange((_event,session)=>{if(session&&!currentUser)boot()});
+boot();
+</script></body></html>
