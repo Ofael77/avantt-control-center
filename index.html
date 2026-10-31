@@ -8,9 +8,9 @@
  onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2'"></script>
 <style>
 :root{--bg:#0d1015;--panel:#151a22;--line:#293241;--txt:#f4f6f8;--muted:#9aa6b5;--blue:#3978ff}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px Inter,system-ui,Arial}button,input,select{font:inherit}.hidden{display:none!important}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px Inter,system-ui,Arial}button,input,select,textarea{font:inherit}.hidden{display:none!important}
 .auth{min-height:100vh;display:grid;place-items:center;padding:20px}.authbox{width:min(430px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px}.brand{font-size:30px;font-weight:850;letter-spacing:3px}.brand span{color:#6394ff}.muted{color:var(--muted);font-size:12px;line-height:1.6}
-.field{display:grid;gap:6px;margin:13px 0}.field label{font-size:11px;color:var(--muted)}input,select{width:100%;padding:12px;background:#0f141c;color:var(--txt);border:1px solid var(--line);border-radius:8px}
+.field{display:grid;gap:6px;margin:13px 0}.field label{font-size:11px;color:var(--muted)}input,select,textarea{width:100%;padding:12px;background:#0f141c;color:var(--txt);border:1px solid var(--line);border-radius:8px}textarea{min-height:145px;resize:vertical;line-height:1.5}.output{white-space:pre-wrap;line-height:1.65;font-size:13px;color:#e7edf7;overflow-wrap:anywhere}.outputbox{margin-top:15px;padding:16px;border:1px solid var(--line);border-radius:10px;background:#10151d}.runmeta{font-size:11px;color:var(--muted);margin-top:10px}
 .btn{background:var(--blue);border:0;border-radius:8px;padding:11px 15px;color:white;font-weight:650;cursor:pointer}.btn.secondary{background:#222c3a;border:1px solid var(--line)}.btn:disabled{opacity:.5;cursor:wait}
 .layout{display:flex;min-height:100vh}.side{width:235px;background:#10141b;border-right:1px solid var(--line);padding:24px 15px;flex-shrink:0}.side .brand{font-size:24px;margin:0 10px 26px}.nav button{display:block;width:100%;text-align:left;border:0;background:none;color:#b7c1ce;padding:12px;border-radius:8px;margin:3px 0;cursor:pointer}.nav button.active,.nav button:hover{background:#1d2b43;color:white}.main{padding:30px;flex:1;max-width:1400px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:25px}.eyebrow{font-size:10px;letter-spacing:2px;color:#77a1ff}.top h1{margin:5px 0;font-size:25px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:17px}.metric{font-size:28px;font-weight:750;margin-top:8px}.mutedlabel{font-size:11px;color:var(--muted)}.section{margin-top:24px}.sectionhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.sectionhead h2{font-size:15px}.page{display:none}.page.active{display:block}.table{width:100%;border-collapse:collapse}.table th,.table td{text-align:left;padding:12px 8px;border-bottom:1px solid var(--line);font-size:11px}.table th{color:var(--muted)}.empty{padding:20px;color:var(--muted);font-size:12px}.status{font-size:10px;color:#86e1b6;background:#203b32;padding:5px 8px;border-radius:20px}.modal{position:fixed;inset:0;background:#000b;display:none;place-items:center;padding:20px}.modal.open{display:grid}.modalbox{width:min(480px,100%);background:var(--panel);border:1px solid var(--line);padding:22px;border-radius:15px}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}.msg{margin-top:12px;font-size:12px;color:#f0bd55;white-space:pre-wrap}.notice{margin-top:18px;padding:12px;border:1px solid #29446b;background:#17263d;color:#b9d0ff;border-radius:9px;font-size:11px;line-height:1.5}
 @media(max-width:720px){.layout{display:block}.side{width:100%;padding:12px}.side .brand{margin:4px 8px 10px}.nav{display:flex;overflow:auto}.nav button{white-space:nowrap;width:auto}.main{padding:18px 13px}.grid{grid-template-columns:1fr 1fr}.top{align-items:flex-start}.table th,.table td{padding:8px 5px;font-size:10px}}
@@ -40,7 +40,22 @@
 <section class="page" id="clients"><div class="sectionhead"><h2>Clientes</h2><button class="btn" type="button" onclick="openForm('client')">+ Novo cliente</button></div><div class="card"><table class="table"><thead><tr><th>Nome</th><th>Empresa</th><th>Contato</th><th>Segmento</th></tr></thead><tbody id="clientsBody"></tbody></table></div></section>
 <section class="page" id="projects"><div class="sectionhead"><h2>Projetos</h2><button class="btn" type="button" onclick="openForm('project')">+ Novo projeto</button></div><div class="card"><table class="table"><thead><tr><th>Projeto</th><th>Serviço</th><th>Status</th><th>Prazo</th></tr></thead><tbody id="projectsBody"></tbody></table></div></section>
 <section class="page" id="tasks"><div class="sectionhead"><h2>Tarefas</h2><button class="btn" type="button" onclick="openForm('task')">+ Nova tarefa</button></div><div class="card"><table class="table"><thead><tr><th>Tarefa</th><th>Responsável</th><th>Status</th><th>Prioridade</th></tr></thead><tbody id="tasksBody"></tbody></table></div></section>
-<section class="page" id="team"><h2>Equipe digital planejada</h2><div class="grid" id="agents"></div><div class="notice">Os cargos estão definidos, mas os agentes ainda precisam de instruções, ferramentas, integrações e testes para executar trabalho real.</div></section>
+<section class="page" id="team">
+<h2>Diretor Executivo de IA</h2>
+<div class="card">
+<p class="muted">Envie uma solicitação ao Diretor Executivo. Ele criará um briefing e um plano de execução, que ficará aguardando sua aprovação. Nenhuma ação externa será realizada automaticamente.</p>
+<div class="field"><label for="executiveInput">O que a AVANTt precisa fazer?</label><textarea id="executiveInput" maxlength="12000" placeholder="Ex.: Crie um plano de campanha para divulgar uma clínica odontológica, incluindo vídeos, design, tráfego pago e redes sociais."></textarea></div>
+<button class="btn" id="executiveBtn" type="button">Executar Diretor Executivo</button>
+<div class="msg" id="executiveMsg" role="status" aria-live="polite"></div>
+<div class="outputbox hidden" id="executiveResult">
+<strong>Plano gerado</strong>
+<div class="output" id="executiveOutput"></div>
+<div class="runmeta" id="executiveRunMeta"></div>
+</div>
+</div>
+<div class="section"><h2>Equipe digital</h2><div class="grid" id="agents"></div></div>
+<div class="notice">O Diretor Executivo já pode elaborar planos com IA. Os demais agentes continuam cadastrados como especialistas e serão conectados gradualmente.</div>
+</section>
 </main></div>
 <div class="modal" id="modal"><div class="modalbox"><div class="sectionhead"><h3 id="modalTitle">Novo registro</h3><button class="btn secondary" type="button" onclick="closeForm()">Fechar</button></div><form id="recordForm"><div id="fields"></div><div class="actions"><button class="btn" type="submit">Salvar na nuvem</button></div></form><div id="formMsg" class="msg"></div></div></div>
 <script>
@@ -173,6 +188,39 @@ $('#recordForm').addEventListener('submit',async function(event){
  if(result.error){msg('#formMsg','Erro: '+result.error.message);return;}
  closeForm();event.currentTarget.reset();await refresh();
 });
+async function runExecutive(){
+ const input=$('#executiveInput').value.trim();
+ if(!input){msg('#executiveMsg','Escreva uma solicitação antes de executar.');return;}
+ if(!sb){msg('#executiveMsg','Conexão indisponível. Entre novamente.');return;}
+ const button=$('#executiveBtn');
+ button.disabled=true;button.textContent='Processando...';
+ msg('#executiveMsg','O Diretor Executivo está analisando sua solicitação. Aguarde.');
+ $('#executiveResult').classList.add('hidden');
+ try{
+  const {data,error}=await sb.functions.invoke('avantt-executive',{body:{input}});
+  if(error){
+   let detail=error.message||'Falha ao chamar a função.';
+   if(error.context){
+    try{const payload=await error.context.json();detail=payload.error||payload.message||detail;}catch(_){}
+   }
+   msg('#executiveMsg','Não foi possível executar: '+detail);
+   return;
+  }
+  if(!data||!data.success){
+   msg('#executiveMsg',data?.error||'A função não retornou uma resposta válida.');
+   return;
+  }
+  $('#executiveOutput').textContent=data.output||'Nenhum conteúdo retornado.';
+  $('#executiveRunMeta').textContent='Execução: '+(data.run?.id||'registrada')+' · Status: '+(data.run?.status||'awaiting_approval')+' · Aprovação humana necessária.';
+  $('#executiveResult').classList.remove('hidden');
+  msg('#executiveMsg','Análise concluída. O resultado foi salvo e aguarda sua aprovação.');
+ }catch(error){
+  msg('#executiveMsg','Erro de comunicação: '+(error?.message||String(error)));
+ }finally{
+  button.disabled=false;button.textContent='Executar Diretor Executivo';
+ }
+}
+$('#executiveBtn').addEventListener('click',runExecutive);
 $('#loginBtn').addEventListener('click',()=>authAction('login'));
 $('#signupBtn').addEventListener('click',()=>authAction('signup'));
 $('#logoutBtn').addEventListener('click',async()=>{if(sb){await sb.auth.signOut();location.reload();}});
